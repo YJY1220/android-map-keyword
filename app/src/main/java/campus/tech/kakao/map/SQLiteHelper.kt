@@ -4,7 +4,6 @@ import android.content.ContentValues
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
-import android.util.Log
 
 class SQLiteHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
 
@@ -18,7 +17,9 @@ class SQLiteHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, 
         const val COL_CATEGORY = "category"
     }
 
+    //db 처음 생성 시 호출
     override fun onCreate(db: SQLiteDatabase) {
+        //테이블 생성 SQL문
         val createTableStatement = ("CREATE TABLE $TABLE_NAME ("
                 + "$COL_ID INTEGER PRIMARY KEY AUTOINCREMENT, "
                 + "$COL_NAME TEXT, "
@@ -31,6 +32,7 @@ class SQLiteHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, 
         }
     }
 
+    //테이블이 비어있는지 확인
     private fun isTableEmpty(db: SQLiteDatabase): Boolean {
         val cursor = db.rawQuery("SELECT COUNT(*) FROM $TABLE_NAME", null)
         cursor.moveToFirst()
@@ -39,11 +41,13 @@ class SQLiteHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, 
         return count == 0
     }
 
+    //db update 때마다 호출됨
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
         db.execSQL("DROP TABLE IF EXISTS $TABLE_NAME")
         onCreate(db)
     }
 
+    //초기 데이터 삽입 메서드
     private fun insertInitialData(db: SQLiteDatabase) {
         for (i in 1..50) {
             val values = ContentValues().apply {
@@ -53,15 +57,5 @@ class SQLiteHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, 
             }
             db.insert(TABLE_NAME, null, values)
         }
-    }
-
-    fun insertData(name: String, address: String, category: String): Long {
-        val db = writableDatabase
-        val values = ContentValues().apply {
-            put(COL_NAME, name)
-            put(COL_ADDRESS, address)
-            put(COL_CATEGORY, category)
-        }
-        return db.insert(TABLE_NAME, null, values)
     }
 }
