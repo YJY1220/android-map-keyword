@@ -15,3 +15,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "android-map-keyword"
 include(":app")
+include(":app")
