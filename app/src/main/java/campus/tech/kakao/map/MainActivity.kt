@@ -1,64 +1,65 @@
 package campus.tech.kakao.map
 
-import android.os.Bundle
-import android.text.Editable
-import android.text.TextWatcher
-import android.view.View
-import androidx.appcompat.app.AppCompatActivity
-import campus.tech.kakao.map.databinding.ActivityMainBinding
-import androidx.lifecycle.ViewModelProvider //viewmodel 초기화
+import android.content.ContentValues
+import android.content.Context
+import android.database.sqlite.SQLiteDatabase
+import android.database.sqlite.SQLiteOpenHelper
 
-class MainActivity : AppCompatActivity() {
+class SQLiteHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
 
-    private lateinit var binding: ActivityMainBinding
-    private lateinit var sqliteHelper: SQLiteHelper
-    private lateinit var viewModel: MapViewModel
+    companion object {
+        private const val DATABASE_NAME = "map.db"
+        private const val DATABASE_VERSION = 1
+        const val TABLE_NAME = "map_table"
+        const val COL_ID = "id"
+        const val COL_NAME = "name"
+        const val COL_ADDRESS = "address"
+        const val COL_CATEGORY = "category"
+    }
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
 
-        //binding 초기화
-        binding = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(binding.root)
+    override fun onCreate(db: SQLiteDatabase) {
+        // 테이블 생성 SQL
+        val createTableStatement = ("CREATE TABLE $TABLE_NAME ("
+                + "$COL_ID INTEGER PRIMARY KEY AUTOINCREMENT, "
+                + "$COL_NAME TEXT, "
+                + "$COL_ADDRESS TEXT, "
+                + "$COL_CATEGORY TEXT)")
+        db.execSQL(createTableStatement)
 
-        //db 연결 유지
-        sqliteHelper = SQLiteHelper(this)
-        sqliteHelper.writableDatabase
+        // 비어있는지 확인
+        if (isTableEmpty(db)) {
+            insertInitialData(db)
+        }
+    }
 
-        //ViewModel 초기화
-        val viewModelProviderFactory =
-            ViewModelProvider.AndroidViewModelFactory.getInstance(application)
-        viewModel = ViewModelProvider(this, viewModelProviderFactory).get(MapViewModel::class.java)
+    // 테이블이 비어있는지 확인
+    private fun isTableEmpty(db: SQLiteDatabase): Boolean {
+        val cursor = db.rawQuery("SELECT COUNT(*) FROM $TABLE_NAME", null)
+        cursor.moveToFirst()
 
-        //검색란에 텍스트 변경
-        val searchEditText = binding.searchEditText
-        val clearTextButton = binding.clearTextButton
+        val cnt = cursor.getInt(0)
+        cursor.close()
 
-        searchEditText.addTextChangedListener(object : TextWatcher {
-            // 텍스트가 변경 전 호출
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
+        return cnt == 0
+    }
+
+    // db update 때마다 호출
+    override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
+        db.execSQL("DROP TABLE IF EXISTS $TABLE_NAME")
+        onCreate(db)
+    }
+
+    // 초기 데이터 삽입 메서드
+    // id만 삽입 후 db inspector에서 직접 입력
+    private fun insertInitialData(db: SQLiteDatabase) {
+        for (i in 1..50) {
+            val values = ContentValues().apply {
+                put(COL_NAME, "")
+                put(COL_ADDRESS, "")
+                put(COL_CATEGORY, "")
             }
-
-            // 텍스트가 변경되는 동안 호출됨
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                // 텍스트가 비어 있지 않다면
-                if (s.toString().isNotEmpty()) {
-                    // clearTextButton을 보이도록 설정합니다.
-                    clearTextButton.visibility = View.VISIBLE
-                } else {
-                    // 텍스트가 비어 있다면 clearTextButton을 숨깁니다.
-                    clearTextButton.visibility = View.GONE
-                }
-            }
-
-            // 텍스트가 변경된 후 호출
-            override fun afterTextChanged(s: Editable?) {
-            }
-        })
-
-        //지우기 버튼 클릭 시 검색 입력란에 입력된 내용 삭제됨
-        clearTextButton.setOnClickListener {
-            searchEditText.text.clear() //입력란 텍스트 삭제
+            db.insert(TABLE_NAME, null, values)
         }
     }
 }

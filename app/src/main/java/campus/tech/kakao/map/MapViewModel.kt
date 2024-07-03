@@ -4,5 +4,5 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 
 class MapViewModel(application: Application) : AndroidViewModel(application) {
-    private val sqliteHelper: SQLiteHelper = SQLiteHelper(application)
+    private val sqLiteHelper: SQLiteHelper = SQLiteHelper(application)
 }

@@ -1,61 +1,62 @@
 package campus.tech.kakao.map
 
-import android.content.ContentValues
-import android.content.Context
-import android.database.sqlite.SQLiteDatabase
-import android.database.sqlite.SQLiteOpenHelper
+import android.os.Bundle
+import androidx.appcompat.app.AppCompatActivity
+import android.text.Editable
+import android.text.TextWatcher
+import android.view.View
+import campus.tech.kakao.map.databinding.ActivityMainBinding
+import androidx.lifecycle.ViewModelProvider //viewmodel 초기화
 
-class SQLiteHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
+class MainActivity : AppCompatActivity() {
 
-    companion object {
-        private const val DATABASE_NAME = "map.db"
-        private const val DATABASE_VERSION = 1
-        const val TABLE_NAME = "map_table"
-        const val COL_ID = "id"
-        const val COL_NAME = "name"
-        const val COL_ADDRESS = "address"
-        const val COL_CATEGORY = "category"
-    }
+    //private 필드 변수화
+    private lateinit var binding: ActivityMainBinding
+    private lateinit var sqLiteHelper: SQLiteHelper
+    private lateinit var viewModel: MapViewModel
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
 
-    // db 처음 생성 시 호출
-    override fun onCreate(db: SQLiteDatabase) {
-        // 테이블 생성 SQL문
-        val createTableStatement = ("CREATE TABLE $TABLE_NAME ("
-                + "$COL_ID INTEGER PRIMARY KEY AUTOINCREMENT, "
-                + "$COL_NAME TEXT, "
-                + "$COL_ADDRESS TEXT, "
-                + "$COL_CATEGORY TEXT)")
-        db.execSQL(createTableStatement)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
-        if (isTableEmpty(db)) {
-            insertInitialData(db)
-        }
-    }
+        //db 연결 유지
+        sqLiteHelper = SQLiteHelper(this)
+        sqLiteHelper.writableDatabase
 
-    // 테이블이 비어있는지 확인
-    private fun isTableEmpty(db: SQLiteDatabase): Boolean {
-        val cursor = db.rawQuery("SELECT COUNT(*) FROM $TABLE_NAME", null)
-        cursor.moveToFirst()
-        val count = cursor.getInt(0)
-        cursor.close()
-        return count == 0
-    }
+        //ViewModel 초기화
+        val viewModelInit = ViewModelProvider.AndroidViewModelFactory.getInstance(application)
+        viewModel = ViewModelProvider(this, viewModelInit).get(MapViewModel::class.java)
 
-    // db update 때마다 호출됨
-    override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-        db.execSQL("DROP TABLE IF EXISTS $TABLE_NAME")
-        onCreate(db)
-    }
+        //검색란 텍스트 입력
+        val searchEditText = binding.searchEditText
+        val clearTextButton = binding.clearTextButton
 
-    // 초기 데이터 삽입 메서드
-    private fun insertInitialData(db: SQLiteDatabase) {
-        for (i in 1..50) {
-            val values = ContentValues().apply {
-                put(COL_NAME, "")
-                put(COL_ADDRESS, "")
-                put(COL_CATEGORY, "")
+        //검색 변경 리스터
+        searchEditText.addTextChangedListener(object : TextWatcher {
+            //before
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
             }
-            db.insert(TABLE_NAME, null, values)
+
+            //Edit
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                //차있는 경우
+                if (s.toString().isNotEmpty()) {
+                    clearTextButton.visibility = View.VISIBLE
+                } else { //비어있는 경우
+                    clearTextButton.visibility = View.GONE
+                }
+            }
+
+            //after
+            override fun afterTextChanged(s: Editable?) {
+            }
+        })
+
+        //clearTextButton 클릭 시 검색란 내용 삭제
+        clearTextButton.setOnClickListener {
+            searchEditText.text.clear()
         }
     }
 }
