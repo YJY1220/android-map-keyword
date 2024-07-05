@@ -39,9 +39,8 @@ class SQLiteHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, 
         cursor.close()
         return cnt == 0
     }
-
+    // 데이터베이스 업그레이드 시 기존 데이터 유지
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-        // 데이터베이스 업그레이드 시 기존 데이터를 유지합니다.
     }
 
     private fun insertInitialData(db: SQLiteDatabase) {
@@ -55,9 +54,10 @@ class SQLiteHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, 
         }
     }
 
+    //항목 검색
     fun searchItems(query: String): Cursor {
         val db = this.readableDatabase
-        return db.rawQuery(
+        return db.rawQuery( //cursor로 반환
             "SELECT * FROM $TABLE_NAME WHERE $COL_NAME LIKE ?",
             arrayOf("%$query%")
         )
