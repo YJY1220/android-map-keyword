@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.View
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
@@ -39,7 +40,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupRecyclerViews() {
-        searchAdapter = SearchAdapter { item -> viewModel.selectItem(item) }
+        searchAdapter = SearchAdapter { item ->
+            if (viewModel.selectedItems.value?.contains(item) == true) {
+                Toast.makeText(this, getString(R.string.item_already_selected), Toast.LENGTH_SHORT).show()
+            } else {
+                viewModel.selectItem(item)
+            }
+        }
         binding.searchResultsRecyclerView.apply {
             layoutManager = LinearLayoutManager(this@MainActivity)
             adapter = searchAdapter
