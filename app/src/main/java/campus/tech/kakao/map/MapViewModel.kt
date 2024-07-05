@@ -19,7 +19,11 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
 
     init {
         searchQuery.observeForever { query ->
-            searchItems(query)
+            if (query.isNullOrEmpty()) {
+                _searchResults.postValue(emptyList())
+            } else {
+                searchItems(query)
+            }
         }
     }
 

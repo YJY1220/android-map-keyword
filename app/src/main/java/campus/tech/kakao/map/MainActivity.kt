@@ -13,7 +13,6 @@ import campus.tech.kakao.map.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
 
-    //private 필드 변수화
     private lateinit var binding: ActivityMainBinding
     private lateinit var sqLiteHelper: SQLiteHelper
     private lateinit var viewModel: MapViewModel
@@ -73,7 +72,8 @@ class MainActivity : AppCompatActivity() {
     private fun observeViewModel() {
         viewModel.searchResults.observe(this, Observer { results ->
             searchAdapter.submitList(results)
-            binding.noResultsTextView.visibility = if (results.isEmpty()) View.VISIBLE else View.GONE
+            binding.noResultsTextView.visibility = if (results.isEmpty() && viewModel.searchQuery.value.isNullOrEmpty()) View.VISIBLE else View.GONE
+            binding.searchResultsRecyclerView.visibility = if (results.isEmpty() && viewModel.searchQuery.value.isNullOrEmpty()) View.GONE else View.VISIBLE
         })
 
         viewModel.selectedItems.observe(this, Observer { selectedItems ->
