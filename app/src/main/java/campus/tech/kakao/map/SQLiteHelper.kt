@@ -1,62 +1,65 @@
 package campus.tech.kakao.map
 
-import android.os.Bundle
-import androidx.appcompat.app.AppCompatActivity
-import android.text.Editable
-import android.text.TextWatcher
-import android.view.View
-import campus.tech.kakao.map.databinding.ActivityMainBinding
-import androidx.lifecycle.ViewModelProvider //viewmodel 초기화
+import android.content.ContentValues
+import android.content.Context
+import android.database.Cursor
+import android.database.sqlite.SQLiteDatabase
+import android.database.sqlite.SQLiteOpenHelper
 
-class MainActivity : AppCompatActivity() {
+class SQLiteHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
 
-    //private 필드 변수화
-    private lateinit var binding: ActivityMainBinding
-    private lateinit var sqLiteHelper: SQLiteHelper
-    private lateinit var viewModel: MapViewModel
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+    companion object {
+        private const val DATABASE_NAME = "map.db"
+        private const val DATABASE_VERSION = 1
+        const val TABLE_NAME = "map_table"
+        const val COL_ID = "id"
+        const val COL_NAME = "name"
+        const val COL_ADDRESS = "address"
+        const val COL_CATEGORY = "category"
+    }
 
-        binding = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(binding.root)
+    override fun onCreate(db: SQLiteDatabase) {
+        val createTableStatement = ("CREATE TABLE $TABLE_NAME ("
+                + "$COL_ID INTEGER PRIMARY KEY AUTOINCREMENT, "
+                + "$COL_NAME TEXT, "
+                + "$COL_ADDRESS TEXT, "
+                + "$COL_CATEGORY TEXT)")
+        db.execSQL(createTableStatement)
 
-        //db 연결 유지
-        sqLiteHelper = SQLiteHelper(this)
-        sqLiteHelper.writableDatabase
-
-        //ViewModel 초기화
-        val viewModelInit = ViewModelProvider.AndroidViewModelFactory.getInstance(application)
-        viewModel = ViewModelProvider(this, viewModelInit).get(MapViewModel::class.java)
-
-        //검색란 텍스트 입력
-        val searchEditText = binding.searchEditText
-        val clearTextButton = binding.clearTextButton
-
-        //검색 변경 리스터
-        searchEditText.addTextChangedListener(object : TextWatcher {
-            //before
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
-            }
-
-            //Edit
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                //차있는 경우
-                if (s.toString().isNotEmpty()) {
-                    clearTextButton.visibility = View.VISIBLE
-                } else { //비어있는 경우
-                    clearTextButton.visibility = View.GONE
-                }
-            }
-
-            //after
-            override fun afterTextChanged(s: Editable?) {
-            }
-        })
-
-        //clearTextButton 클릭 시 검색란 내용 삭제
-        clearTextButton.setOnClickListener {
-            searchEditText.text.clear()
+        // 초기 데이터 삽입
+        if (isTableEmpty(db)) {
+            insertInitialData(db)
         }
+    }
+
+    private fun isTableEmpty(db: SQLiteDatabase): Boolean {
+        val cursor = db.rawQuery("SELECT COUNT(*) FROM $TABLE_NAME", null)
+        cursor.moveToFirst()
+        val cnt = cursor.getInt(0)
+        cursor.close()
+        return cnt == 0
+    }
+
+    override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
+        // 데이터베이스 업그레이드 시 기존 데이터를 유지합니다.
+    }
+
+    private fun insertInitialData(db: SQLiteDatabase) {
+        for (i in 1..50) {
+            val values = ContentValues().apply {
+                put(COL_NAME, "")
+                put(COL_ADDRESS, "")
+                put(COL_CATEGORY, "")
+            }
+            db.insert(TABLE_NAME, null, values)
+        }
+    }
+
+    fun searchItems(query: String): Cursor {
+        val db = this.readableDatabase
+        return db.rawQuery(
+            "SELECT * FROM $TABLE_NAME WHERE $COL_NAME LIKE ?",
+            arrayOf("%$query%")
+        )
     }
 }
