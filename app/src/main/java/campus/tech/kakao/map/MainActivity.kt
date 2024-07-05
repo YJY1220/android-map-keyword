@@ -69,7 +69,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    //검색 시 Edxt
+    //검색 시 Edit
     private fun setupSearchEditText() {
         binding.searchEditText.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
